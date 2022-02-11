@@ -406,8 +406,7 @@
           "NRF_VBUS",
           "PWR_MAX16V",
           "TIA0_V",
-          "TIA1_V",
-          "TIA_V"
+          "TIA1_V"
         ],
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "schematic_color": "rgba(0, 0, 0, 0.000)",

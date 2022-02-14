@@ -1404,6 +1404,7 @@
     )
   )
 
+
   (junction (at 48.26 238.76) (diameter 0) (color 0 0 0 0)
     (uuid 061bad8b-4d04-484c-8c94-4dc2f35e21c8)
   )
@@ -3424,7 +3425,7 @@
     (effects (font (size 1.27 1.27)) (justify left))
     (uuid 43d1ab80-ffc0-418f-a5da-51d60aa545e8)
   )
-  (hierarchical_label "ADC_CH6" (shape output) (at 494.03 285.75 0)
+  (hierarchical_label "ADC_CH6" (shape output) (at 494.03 288.29 0)
     (effects (font (size 1.27 1.27)) (justify left))
     (uuid 44e748f6-3f6b-4e33-8d60-5463f516c5df)
   )
@@ -3496,7 +3497,7 @@
     (effects (font (size 1.27 1.27)) (justify left))
     (uuid bedd19db-be80-47b7-88b2-53f45502aac8)
   )
-  (hierarchical_label "ADC_CH7" (shape output) (at 494.03 288.29 0)
+  (hierarchical_label "ADC_CH7" (shape output) (at 494.03 285.75 0)
     (effects (font (size 1.27 1.27)) (justify left))
     (uuid bf5f9221-f200-4931-aa64-ff35105607ef)
   )

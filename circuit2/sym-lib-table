@@ -1,0 +1,4 @@
+(sym_lib_table
+  (lib (name "NRF52840")(type "Legacy")(uri "${KIPRJMOD}/Library.pretty/NRF52840-DONGLE.lib")(options "")(descr ""))
+  (lib (name "MCP3564")(type "KiCad")(uri "${KIPRJMOD}/Library.pretty/MCP3564.kicad_sym")(options "")(descr ""))
+)

@@ -25,7 +25,7 @@ The `/circuit2` is high cost.
 
 |Name                  |Category|  EUR|Footprint|   |   |   |   |   |   |
 |----------------------|--------|-----|---------|---|---|---|---|---|---|
-| [MCP6004][3]         | Op-Amp |0.5  |SOIC-14  |   |   |   |   |   |   |
+| [MCP6034][9]         | Op-Amp |0.5  |SOIC-14  |   |   |   |   |   |   |
 | [MCP3564][4]         | ADC    |6    |         |   |   |   |   |   |   |
 | [nRF52840 Dongle][1] | MCU    |     |         |   |   |   |   |   |   |
 | [MAX6070][5]         | VREF   |     |SOT-23-6 |   |   |   |   |   |   |
@@ -47,3 +47,4 @@ The `/circuit2` is high cost.
 [6]:https://www.ti.com/product/LP2985
 [7]:https://www.ti.com/product/LP5907
 [8]:https://www.onsemi.com/products/power-management/linear-regulators-ldo/lm1117
+[9]:https://www.microchip.com/en-us/product/MCP3564

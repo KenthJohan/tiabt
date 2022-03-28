@@ -14,6 +14,7 @@
 #include <sys/printk.h>
 #include <sys/byteorder.h>
 #include <zephyr.h>
+#include <sys/__assert.h>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
@@ -21,6 +22,9 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/services/bas.h>
+
+#include <drivers/gpio.h>
+#include <drivers/spi.h>
 
 #define SENSOR_1_NAME				"Temperature Sensor 1"
 #define SENSOR_2_NAME				"Temperature Sensor 2"
@@ -46,6 +50,25 @@
 #define ESS_GREATER_OR_EQUAL_TO_REF_VALUE	0x07
 #define ESS_EQUAL_TO_REF_VALUE			0x08
 #define ESS_NOT_EQUAL_TO_REF_VALUE		0x09
+
+
+
+
+
+//ADC pin CSK ---orange--- (PA5,D13,20,SCK)
+//ADC pin SDO ---yellow--- (PA6,D12,21,MISO)
+//ADC pin SDI ---green---- (PA7,D11,22,MOSI)
+#define MY_DEVICE_SPI "SPI_1"
+
+#define MY_DEVICE_CS_PIN 10
+#define MY_DEVICE_CS_PORT "GPIOA"
+
+
+
+
+
+
+
 
 static ssize_t read_u16(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
@@ -417,6 +440,65 @@ static void bas_notify(void)
 	bt_bas_set_battery_level(battery_level);
 }
 
+
+static struct spi_config spi_cfg = {0};
+static struct device *dev_spi1 = NULL;
+static struct device * dev_porta = NULL;
+
+static void init_adc()
+{
+	printk("Init SPI\n");
+	//dev_spi1 = DEVICE_DT_GET(DT_ALIAS(spi_1)); // TODO: Why does'nt this work???
+    dev_spi1 = device_get_binding(MY_DEVICE_SPI);
+	dev_porta = device_get_binding(MY_DEVICE_CS_PORT); //--white---(PA10,D3,51)
+	__ASSERT(dev_spi1, "device_get_binding failed");
+	__ASSERT(dev_porta, "device_get_binding failed");
+	spi_cfg.operation = SPI_WORD_SET(8) | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_TRANSFER_MSB;
+	spi_cfg.frequency = 1000000;
+}
+
+
+static uint8_t transfer(uint8_t data_tx)
+{
+	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 0);
+	uint8_t data_rx;
+	struct spi_buf buf_tx[] = {{.buf = &data_tx,.len = sizeof(data_tx)}};
+	struct spi_buf buf_rx[] = {{.buf = &data_rx,.len = sizeof(data_rx)}};
+	struct spi_buf_set tx = {.buffers = buf_tx, .count = 1};
+	struct spi_buf_set rx = {.buffers = buf_rx, .count = 1};
+	spi_transceive(dev_spi1, &spi_cfg, &tx, &rx);
+	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 1);
+	return data_rx;
+}
+
+
+
+#define MCP356X_COMMAND_BYTE(addr, cmd, type) (((addr)<<6) | ((cmd)<<2) | ((type)<<0))
+#define MCP356X_DEVICE_ADDRESS 0b01
+#define MCP356X_SREAD 0b01
+#define MCP356X_IWRITE 0b10
+#define MCP356X_IREAD 0b11
+#define MCP356X_ADCDATA 0x0
+
+void test(void)
+{
+	uint8_t r[4];
+	uint32_t w = MCP356X_COMMAND_BYTE(MCP356X_DEVICE_ADDRESS, MCP356X_ADCDATA, MCP356X_IREAD);
+	r[0] = transfer(w);
+	r[1] = transfer(0);
+	r[2] = transfer(0);
+	r[3] = transfer(0);
+	uint32_t a = (r[3] << 16) | (r[2] << 8) | (r[1] << 0);
+	printk("ADC: %u\n", a);
+}
+
+
+
+
+
+
+
+
 void main(void)
 {
 	int err;
@@ -430,9 +512,14 @@ void main(void)
 	bt_ready();
 
 	bt_conn_auth_cb_register(&auth_cb_display);
-
-	while (1) {
-		k_sleep(K_SECONDS(1));
+	
+	init_adc();
+	
+	
+	while (1)
+	{
+		k_sleep(K_MSEC(1));
+		test();
 
 		/* Temperature simulation */
 		if (simulate_temp) {

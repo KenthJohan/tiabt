@@ -15,3 +15,8 @@ west build -b nucleo_wb55rg --pristine
 west flash
 ```
 
+
+
+* https://github.com/edmundsj/MCP3561DevBoard/blob/master/mcp3561_arduino/mcp3561.h
+* https://github.com/MoustachedBird/ESP32_seismic_datalogger/blob/main/main/spi_mcp356x.c
+* https://github.com/KenthJohan/zephyrtest/blob/master/src/tmc2130.h

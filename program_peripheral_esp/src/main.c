@@ -55,11 +55,12 @@
 
 
 
-//ADC pin CSK ---orange--- (PA5,D13,20,SCK)
-//ADC pin SDO ---yellow--- (PA6,D12,21,MISO)
-//ADC pin SDI ---green---- (PA7,D11,22,MOSI)
+// ADC pin CSK ---orange--- (PA5,D13,20,SCK)
+// ADC pin SDO ---yellow--- (PA6,D12,21,MISO)
+// ADC pin SDI ---green---- (PA7,D11,22,MOSI)
 #define MY_DEVICE_SPI "SPI_1"
 
+// ADC pin CS ---blue--- (PA10,D3,51)
 #define MY_DEVICE_CS_PIN 10
 #define MY_DEVICE_CS_PORT "GPIOA"
 
@@ -441,9 +442,53 @@ static void bas_notify(void)
 }
 
 
+#define CONFIG0_CLK_SEL_POS 4
+#define CONFIG0_CLK_SEL_INT 0b11 << CONFIG0_CLK_SEL_POS
+#define CONFIG0_CLK_SEL_EXT 0b00 << CONFIG0_CLK_SEL_POS
+#define CONFIG0_ADC_MODE_POS 0
+#define CONFIG0_ADC_MODE_CONV 0b11 << CONFIG0_ADC_MODE_POS
+
+
+#define MCP356X_COMMAND_BYTE(addr, cmd, type) (((addr)<<6) | ((cmd)<<2) | ((type)<<0))
+#define MCP356X_DEVICE_ADDRESS 0b01
+#define MCP356X_SREAD 0b01
+#define MCP356X_IWRITE 0b10
+#define MCP356X_IREAD 0b11
+#define MCP356X_ADDR_ADCDATA 0x0
+#define MCP356X_ADDR_CONFIG0 0x1
+#define MCP356X_ADDR_CONFIG1 0x2
+#define MCP356X_ADDR_CONFIG2 0x3
+#define MCP356X_ADDR_CONFIG3 0x4
+#define MCP356X_ADDR_IRQ 0x05
+#define MCP356X_ADDR_MUX 0x05
+
+#define CONFIG1_OSR_POS 2
+#define CONFIG1_OSR_32 0b0000 << CONFIG1_OSR_POS
+#define CONFIG1_OSR_256 0b0011 << CONFIG1_OSR_POS
+
+#define CONFIG3_CONV_MODE_POS 6
+#define CONFIG3_CONV_MODE_CONTINUOUS 0b11 << CONFIG3_CONV_MODE_POS
+
+
+#define IRQ_MODE_HIGH 0b01110111
+
 static struct spi_config spi_cfg = {0};
 static struct device *dev_spi1 = NULL;
 static struct device * dev_porta = NULL;
+
+
+static uint8_t transfer(uint8_t data_tx)
+{
+	uint8_t data_rx;
+	struct spi_buf buf_tx[] = {{.buf = &data_tx,.len = sizeof(data_tx)}};
+	struct spi_buf buf_rx[] = {{.buf = &data_rx,.len = sizeof(data_rx)}};
+	struct spi_buf_set tx = {.buffers = buf_tx, .count = 1};
+	struct spi_buf_set rx = {.buffers = buf_rx, .count = 1};
+	spi_transceive(dev_spi1, &spi_cfg, &tx, &rx);
+	return data_rx;
+}
+
+
 
 static void init_adc()
 {
@@ -453,43 +498,148 @@ static void init_adc()
 	dev_porta = device_get_binding(MY_DEVICE_CS_PORT); //--white---(PA10,D3,51)
 	__ASSERT(dev_spi1, "device_get_binding failed");
 	__ASSERT(dev_porta, "device_get_binding failed");
-	spi_cfg.operation = SPI_WORD_SET(8) | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_TRANSFER_MSB;
-	spi_cfg.frequency = 1000000;
-}
+	//spi_cfg.operation = SPI_WORD_SET(8) | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_TRANSFER_MSB;
+	spi_cfg.operation = SPI_WORD_SET(8) | SPI_MODE_GET(0);
+	spi_cfg.frequency = 1*1000*1000;
+	
+	{
+		int r = 0;
+		r = gpio_pin_configure(dev_porta, MY_DEVICE_CS_PIN, GPIO_OUTPUT_ACTIVE);
+		__ASSERT(r == 0, "gpio_pin_configure failed (err %u)", r);
+	}
 
-
-static uint8_t transfer(uint8_t data_tx)
-{
+	
+	
 	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 0);
-	uint8_t data_rx;
-	struct spi_buf buf_tx[] = {{.buf = &data_tx,.len = sizeof(data_tx)}};
-	struct spi_buf buf_rx[] = {{.buf = &data_rx,.len = sizeof(data_rx)}};
-	struct spi_buf_set tx = {.buffers = buf_tx, .count = 1};
-	struct spi_buf_set rx = {.buffers = buf_rx, .count = 1};
-	spi_transceive(dev_spi1, &spi_cfg, &tx, &rx);
+	{
+		uint32_t w = MCP356X_COMMAND_BYTE(MCP356X_DEVICE_ADDRESS, MCP356X_ADDR_CONFIG0, MCP356X_IWRITE);
+		transfer(w);
+		transfer(CONFIG0_CLK_SEL_INT|CONFIG0_ADC_MODE_CONV); // CONFGI0: Use Internal clock
+		transfer(CONFIG1_OSR_256); //CONFGI1: Use Internal clock
+		
+		printk("0b11<<4:   %02x\n", CONFIG0_CLK_SEL_INT|CONFIG0_ADC_MODE_CONV);
+		printk("CONFIG1_OSR_256:   %02x\n", CONFIG1_OSR_256);
+		
+	}
 	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 1);
-	return data_rx;
+	
+	
+	
+	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 0);
+	{
+		uint32_t w = MCP356X_COMMAND_BYTE(MCP356X_DEVICE_ADDRESS, MCP356X_ADDR_CONFIG3, MCP356X_IWRITE);
+		transfer(w);
+		transfer(CONFIG3_CONV_MODE_CONTINUOUS); // Use Internal clock
+	}
+	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 1);
+	
+	
+	
+	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 0);
+	{
+		uint32_t w = MCP356X_COMMAND_BYTE(MCP356X_DEVICE_ADDRESS, MCP356X_ADDR_IRQ, MCP356X_IWRITE);
+		transfer(w);
+		transfer(IRQ_MODE_HIGH); // Use Internal clock
+	}
+	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 1);
+	
+	
+	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 0);
+	{
+		uint32_t w = MCP356X_COMMAND_BYTE(MCP356X_DEVICE_ADDRESS, MCP356X_ADDR_MUX, MCP356X_IWRITE);
+		transfer(w);
+		transfer(0b00001100); // plus:CH0   minus:REFIN-
+	}
+	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 1);
+	
+	
+	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 0);
+	{
+		uint8_t w = MCP356X_COMMAND_BYTE(MCP356X_DEVICE_ADDRESS, MCP356X_ADDR_ADCDATA, MCP356X_IREAD);
+		uint8_t r[4];
+		r[0] = transfer(w);
+		r[1] = transfer(0);
+		r[2] = transfer(0);
+		r[3] = transfer(0);
+		printk("adcdata: %02x %02x %02x %02x\n", r[0], r[1], r[2], r[3]);
+		
+		uint8_t config0 = transfer(0);
+		uint8_t config1 = transfer(0);
+		uint8_t config2 = transfer(0);
+		uint8_t config3 = transfer(0);
+		uint8_t irq = transfer(0);
+		uint8_t mux = transfer(0);
+		uint8_t scan[4];
+		scan[0] = transfer(0);
+		scan[1] = transfer(0);
+		scan[2] = transfer(0);
+		scan[3] = transfer(0);
+		uint8_t timer[4];
+		timer[0] = transfer(0);
+		timer[1] = transfer(0);
+		timer[2] = transfer(0);
+		timer[3] = transfer(0);
+		uint8_t offsetcal[4];
+		offsetcal[0] = transfer(0);
+		offsetcal[1] = transfer(0);
+		offsetcal[2] = transfer(0);
+		offsetcal[3] = transfer(0);
+		uint8_t gaincal[4];
+		gaincal[0] = transfer(0);
+		gaincal[1] = transfer(0);
+		gaincal[2] = transfer(0);
+		gaincal[3] = transfer(0);
+		printk("config0:   %02x\n", config0);
+		printk("config1:   %02x\n", config1);
+		printk("config2:   %02x\n", config2);
+		printk("config3:   %02x\n", config3);
+		printk("irq:       %02x\n", irq);
+		printk("mux:       %02x\n", mux);
+		printk("scan:      %02x %02x %02x %02x\n", scan[0], scan[1], scan[2], scan[3]);
+		printk("timer:     %02x %02x %02x %02x\n", timer[0], timer[1], timer[2], timer[3]);
+		printk("offsetcal: %02x %02x %02x %02x\n", offsetcal[0], offsetcal[1], offsetcal[2], offsetcal[3]);
+		printk("gaincal:   %02x %02x %02x %02x\n", gaincal[0], gaincal[1], gaincal[2], gaincal[3]);
+	}
+	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 1);
 }
 
 
 
-#define MCP356X_COMMAND_BYTE(addr, cmd, type) (((addr)<<6) | ((cmd)<<2) | ((type)<<0))
-#define MCP356X_DEVICE_ADDRESS 0b01
-#define MCP356X_SREAD 0b01
-#define MCP356X_IWRITE 0b10
-#define MCP356X_IREAD 0b11
-#define MCP356X_ADCDATA 0x0
+
+
+
 
 void test(void)
 {
-	uint8_t r[4];
-	uint32_t w = MCP356X_COMMAND_BYTE(MCP356X_DEVICE_ADDRESS, MCP356X_ADCDATA, MCP356X_IREAD);
+	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 0);
+	uint8_t r[5];
+	uint8_t w = MCP356X_COMMAND_BYTE(MCP356X_DEVICE_ADDRESS, MCP356X_ADDR_ADCDATA, MCP356X_SREAD);
 	r[0] = transfer(w);
 	r[1] = transfer(0);
 	r[2] = transfer(0);
 	r[3] = transfer(0);
-	uint32_t a = (r[3] << 16) | (r[2] << 8) | (r[1] << 0);
-	printk("ADC: %u\n", a);
+	r[4] = transfer(0);
+	
+	
+	uint32_t tmp_data;
+    tmp_data = r[2];
+    tmp_data <<= 8;
+    tmp_data |= r[3];
+    tmp_data <<= 8;
+    tmp_data |= r[4];
+	uint8_t temp = r[1];
+	
+	uint8_t chan = ( temp >> 4 ) & 0x0F;
+    uint8_t sign =  temp & 0x01;
+    if( sign != 0 )
+    {
+        tmp_data -= 16777215;
+    }
+
+	//printk("r:      %02x %02x %02x %02x\n", r[0], r[1], r[2], r[3]);
+	//uint32_t a = (r[3] << 16) | (r[2] << 8) | (r[1] << 0);
+	//gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 1);
+	printk("ADC: %02x: %u\n", chan, tmp_data);
 }
 
 
@@ -518,7 +668,18 @@ void main(void)
 	
 	while (1)
 	{
-		k_sleep(K_MSEC(1));
+		
+		k_sleep(K_MSEC(1000));
+		
+		/*
+		k_sleep(K_SECONDS(4));
+		printk("MY_DEVICE_CS_PIN 0\n");
+		gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 0);
+		k_sleep(K_SECONDS(4));
+		printk("MY_DEVICE_CS_PIN 1\n");
+		gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 1);
+		*/
+		
 		test();
 
 		/* Temperature simulation */

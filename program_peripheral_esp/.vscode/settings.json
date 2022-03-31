@@ -1,0 +1,10 @@
+{
+	"files.associations": {
+		"*.emuTest": "c",
+		"bt.h": "c",
+		"uuid.h": "c",
+		"bluetooth.h": "c",
+		"hci.h": "c",
+		"adc.h": "c"
+	}
+}

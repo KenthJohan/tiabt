@@ -249,3 +249,18 @@ static char const * MCP356X_REG_tostring(int a)
 #define MCP356X_FAST_CMD_DEV_FULL_RESET      0x38
 
 #define MCP356X_CALC_COEF                    8388608
+
+
+
+
+
+#define VREF  2048
+float adc9_volt_calc (int32_t adc_val)
+{
+	adc_val /= 256;
+	float volt;
+	float gain = 1.0f;
+	uint32_t coef = MCP356X_CALC_COEF;
+	volt = ( float )( adc_val / ( float )( coef * gain ) ) * ( float ) VREF;
+	return volt;
+}

@@ -67,27 +67,78 @@ static uint8_t transfer1(char const * s, uint8_t tx)
 
 
 
-static void set(uint8_t reg, uint8_t val)
+static void set8(uint8_t reg, uint8_t value)
 {
-	uint8_t cmd;
-	uint8_t ack;
-	uint8_t rx;
-
-	// Set register (reg) to value (val)
+	uint8_t tx[4];
+	uint8_t rx[4];
+	tx[0] = MCP356X_COMMAND_BYTE(MCP356X_DEVICE_ADR, reg, MCP356X_CMD_INC_WRITE);
+	tx[1] = value;
+	struct spi_buf buf_tx[] = {{.buf = &tx,.len = sizeof(tx)}};
+	struct spi_buf buf_rx[] = {{.buf = &rx,.len = sizeof(rx)}};
+	struct spi_buf_set tx_buf = {.buffers = buf_tx, .count = 1};
+	struct spi_buf_set rx_buf = {.buffers = buf_rx, .count = 1};
 	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 0);
-	cmd = MCP356X_COMMAND_BYTE(MCP356X_DEVICE_ADR, reg, MCP356X_CMD_INC_WRITE);
-	transfer(cmd);
-	transfer(val);
+	spi_transceive(dev_spi1, &spi_cfg, &tx_buf, &rx_buf);
 	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 1);
+}
 
-	// Read register (reg)
+
+static uint8_t get8(uint8_t reg)
+{
+	uint8_t tx[2];
+	uint8_t rx[2];
+	struct spi_buf buf_tx[] = {{.buf = &tx,.len = sizeof(tx)}};
+	struct spi_buf buf_rx[] = {{.buf = &rx,.len = sizeof(rx)}};
+	struct spi_buf_set tx_buf = {.buffers = buf_tx, .count = 1};
+	struct spi_buf_set rx_buf = {.buffers = buf_rx, .count = 1};
+	tx[0] = MCP356X_COMMAND_BYTE(MCP356X_DEVICE_ADR, reg, MCP356X_CMD_INC_READ);
+	tx[1] = 0; // Need to write in order to read. Exchange 0 for reading data.
 	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 0);
-	cmd = MCP356X_COMMAND_BYTE(MCP356X_DEVICE_ADR, reg, MCP356X_CMD_INC_READ);
-	ack = transfer(cmd);
-	rx = transfer(0);
+	spi_transceive(dev_spi1, &spi_cfg, &tx_buf, &rx_buf);
 	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 1);
-	
-	printk("SET8: %s: %02x %02x ack:%02x\n", MCP356X_REG_tostring(reg), val, rx, ack);
+	return rx[1];
+}
+
+static uint32_t get24(uint8_t reg)
+{
+	uint8_t tx[5];
+	uint8_t rx[5];
+	struct spi_buf buf_tx[] = {{.buf = &tx,.len = sizeof(tx)}};
+	struct spi_buf buf_rx[] = {{.buf = &rx,.len = sizeof(rx)}};
+	struct spi_buf_set tx_buf = {.buffers = buf_tx, .count = 1};
+	struct spi_buf_set rx_buf = {.buffers = buf_rx, .count = 1};
+	tx[0] = MCP356X_COMMAND_BYTE(MCP356X_DEVICE_ADR, reg, MCP356X_CMD_INC_READ);
+	tx[1] = 0; // Need to write in order to read. Exchange 0 for reading data.
+	tx[2] = 0; // Need to write in order to read. Exchange 0 for reading data.
+	tx[3] = 0; // Need to write in order to read. Exchange 0 for reading data.
+	tx[4] = 0; // Need to write in order to read. Exchange 0 for reading data.
+	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 0);
+	spi_transceive(dev_spi1, &spi_cfg, &tx_buf, &rx_buf);
+	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 1);
+	uint32_t v = (rx[1] << 16) | (rx[2] << 8) |  (rx[3] << 0);
+	return v;
+}
+
+static int32_t get32(uint8_t reg)
+{
+	uint8_t tx[5];
+	uint8_t rx[5];
+	struct spi_buf buf_tx[] = {{.buf = &tx,.len = sizeof(tx)}};
+	struct spi_buf buf_rx[] = {{.buf = &rx,.len = sizeof(rx)}};
+	struct spi_buf_set tx_buf = {.buffers = buf_tx, .count = 1};
+	struct spi_buf_set rx_buf = {.buffers = buf_rx, .count = 1};
+	tx[0] = MCP356X_COMMAND_BYTE(MCP356X_DEVICE_ADR, reg, MCP356X_CMD_INC_READ);
+	tx[1] = 0; // Need to write in order to read. Exchange 0 for reading data.
+	tx[2] = 0; // Need to write in order to read. Exchange 0 for reading data.
+	tx[3] = 0; // Need to write in order to read. Exchange 0 for reading data.
+	tx[4] = 0; // Need to write in order to read. Exchange 0 for reading data.
+	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 0);
+	spi_transceive(dev_spi1, &spi_cfg, &tx_buf, &rx_buf);
+	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 1);
+	int32_t v = (rx[1] << 24) | (rx[2] << 16) | (rx[3] << 8) |  (rx[4] << 0);
+	v = v / 256;
+	printk("GET32: %s: %i\n", MCP356X_REG_tostring(reg), v);
+	return v;
 }
 
 
@@ -98,62 +149,34 @@ static void set24(uint8_t reg, uint32_t value)
 	uint8_t tx[4];
 	uint8_t rx[4];
 	tx[0] = MCP356X_COMMAND_BYTE(MCP356X_DEVICE_ADR, reg, MCP356X_CMD_INC_WRITE);
-    tx[1] = ( value >> 16 ) & 0xFF;
-    tx[2] = ( value >> 8 ) & 0xFF;
-    tx[3] = ( value >> 0 ) & 0xFF;
-
+	tx[1] = ( value >> 16 ) & 0xFF;
+	tx[2] = ( value >> 8 ) & 0xFF;
+	tx[3] = ( value >> 0 ) & 0xFF;
 	struct spi_buf buf_tx[] = {{.buf = &tx,.len = sizeof(tx)}};
 	struct spi_buf buf_rx[] = {{.buf = &rx,.len = sizeof(rx)}};
 	struct spi_buf_set tx_buf = {.buffers = buf_tx, .count = 1};
 	struct spi_buf_set rx_buf = {.buffers = buf_rx, .count = 1};
-	
 	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 0);
 	spi_transceive(dev_spi1, &spi_cfg, &tx_buf, &rx_buf);
 	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 1);
+}
 
-	k_sleep(K_MSEC(1));
 
-	tx[0] = MCP356X_COMMAND_BYTE(MCP356X_DEVICE_ADR, reg, MCP356X_CMD_INC_READ);
-    tx[1] = 0;
-    tx[2] = 0;
-    tx[3] = 0;
 
-	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 0);
-	spi_transceive(dev_spi1, &spi_cfg, &tx_buf, &rx_buf);
-	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 1);
-
-	uint32_t v = (rx[1] << 16) | (rx[2] << 8) |  (rx[3] << 0);
+static void set24_debug(uint8_t reg, uint32_t value)
+{
+	set24(reg, value);
+	uint32_t v = get24(reg);
 	printk("SET24: %s: %08x %08x\n", MCP356X_REG_tostring(reg), value, v);
 }
 
-
-
-
-static int32_t get32(uint8_t reg)
+static void set8_debug(uint8_t reg, uint8_t value)
 {
-	uint8_t tx[5];
-	uint8_t rx[5];
-
-	struct spi_buf buf_tx[] = {{.buf = &tx,.len = sizeof(tx)}};
-	struct spi_buf buf_rx[] = {{.buf = &rx,.len = sizeof(rx)}};
-	struct spi_buf_set tx_buf = {.buffers = buf_tx, .count = 1};
-	struct spi_buf_set rx_buf = {.buffers = buf_rx, .count = 1};
-
-	tx[0] = MCP356X_COMMAND_BYTE(MCP356X_DEVICE_ADR, reg, MCP356X_CMD_INC_READ);
-    tx[1] = 0;
-    tx[2] = 0;
-    tx[3] = 0;
-    tx[4] = 0;
-
-	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 0);
-	spi_transceive(dev_spi1, &spi_cfg, &tx_buf, &rx_buf);
-	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 1);
-
-	int32_t v = (rx[1] << 24) | (rx[2] << 16) | (rx[3] << 8) |  (rx[4] << 0);
-	v = v / 256;
-	printk("GET32: %s: %i\n", MCP356X_REG_tostring(reg), v);
-	return v;
+	set8(reg, value);
+	uint8_t v = get8(reg);
+	printk("SET8: %s: %08x %08x\n", MCP356X_REG_tostring(reg), value, v);
 }
+
 
 
 
@@ -163,13 +186,11 @@ static int32_t get32(uint8_t reg)
 #define VREF  2048
 float adc9_volt_calc ( int32_t adc_val)
 {
-    float volt;
+	float volt;
 	float gain = 1.0f;
-    uint32_t coef = ADC9_CALC_COEF;
-    
-    volt = ( float )( adc_val / ( float )( coef * gain ) ) * ( float ) VREF;
-
-    return volt;
+	uint32_t coef = ADC9_CALC_COEF;
+	volt = ( float )( adc_val / ( float )( coef * gain ) ) * ( float ) VREF;
+	return volt;
 }
 
 #define PWM_NODE DT_NODELABEL(blue_led_1)
@@ -210,20 +231,20 @@ static void init_adc()
 
 
 
-	set(MCP356X_REG_CFG_0,
+	set8_debug(MCP356X_REG_CFG_0,
 	MCP356X_CFG_0_VREF_SEL_0 |
 	MCP356X_CFG_0_CLK_SEL_2 |
 	MCP356X_CFG_0_CS_SEL_0 |
 	MCP356X_CFG_0_MODE_CONV
 	);
 
-	set(MCP356X_REG_CFG_1,
+	set8_debug(MCP356X_REG_CFG_1,
 	MCP356X_CFG_1_PRE_1 |
 	MCP356X_CFG_1_OSR_32 |
 	MCP356X_CFG_1_DITHER_DEF
 	);
 
-	set(MCP356X_REG_CFG_2,
+	set8_debug(MCP356X_REG_CFG_2,
 	MCP356X_CFG_2_BOOST_X_1 |
 	MCP356X_CFG_2_GAIN_X_1 |
 	MCP356X_CFG_2_AZ_MUX_DIS |
@@ -231,7 +252,7 @@ static void init_adc()
 	MCP356X_CFG_2_AZ_FREQ_HIGH
 	);
 
-	set(MCP356X_REG_CFG_3,
+	set8_debug(MCP356X_REG_CFG_3,
 	MCP356X_CFG_3_CONV_MODE_CONT |
 	MCP356X_CFG_3_DATA_FORMAT_DEF |
 	MCP356X_CFG_3_CRC_FORMAT_16 |
@@ -240,45 +261,19 @@ static void init_adc()
 	MCP356X_CFG_3_CRC_GAIN_CAL_EN
 	);
 
-	set(MCP356X_REG_MUX,
+	set8_debug(MCP356X_REG_MUX,
 	MCP356X_MUX_VIN_POS_CH0 | 
 	MCP356X_MUX_VIN_NEG_CH1
 	);
 
 
-	set24(MCP356X_REG_SCAN, 0);
-	set24(MCP356X_REG_OFFSET_CAL, 0);
-	set24(MCP356X_REG_GAIN_CAL, 0x00800000);
-	set24(MCP356X_RSV_REG_W_A, 0x00900F00);
+	set24_debug(MCP356X_REG_SCAN, 0);
+	set24_debug(MCP356X_REG_OFFSET_CAL, 0);
+	set24_debug(MCP356X_REG_GAIN_CAL, 0x00800000);
+	set24_debug(MCP356X_RSV_REG_W_A, 0x00900F00);
 
 
 }
-
-
-
-
-
-
-
-void test(void)
-{
-	uint8_t r[5];
-	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 0);
-	{
-		uint8_t w = MCP356X_COMMAND_BYTE(MCP356X_DEVICE_ADR, MCP356X_REG_ADC_DATA, MCP356X_CMD_INC_READ);
-		r[0] = transfer(w);
-		r[1] = transfer(0); // Read ADC Byte Value 0
-		r[2] = transfer(0); // Read ADC Byte Value 1
-		r[3] = transfer(0); // Read ADC Byte Value 2
-		r[4] = transfer(0); // Read ADC Byte Value 3
-	}
-	gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 1);
-	printk("ADC: %02x: %02x %02x %02x %02x\n", r[0], r[1], r[2], r[3], r[4]);
-}
-
-
-
-
 
 
 
@@ -302,31 +297,16 @@ void main(void)
 	
 	while (1)
 	{
-		
 		k_sleep(K_MSEC(1000));
-		
-		/*
-		k_sleep(K_SECONDS(4));
-		printk("MY_DEVICE_CS_PIN 0\n");
-		gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 0);
-		k_sleep(K_SECONDS(4));
-		printk("MY_DEVICE_CS_PIN 1\n");
-		gpio_pin_set(dev_porta, MY_DEVICE_CS_PIN, 1);
-		*/
-		
-		//test();
 		int32_t v = get32(MCP356X_REG_ADC_DATA);
 		v = adc9_volt_calc(v);
 		printk("Voltage: %i\n", v);
 
 
-
-		/* Temperature simulation */
-		if (simulate_temp) {
+		if (simulate_temp)
+		{
 			ess_simulate();
 		}
-
-		/* Battery level simulation */
 		bas_notify();
 	}
 }

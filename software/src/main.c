@@ -230,8 +230,8 @@ void main(void)
 	{
 		k_sleep(K_MSEC(1000));
 		int32_t v = get32(MCP356X_REG_ADC_DATA);
-		v = adc9_volt_calc(v);
-		printk("Voltage: %i mV\n", v);
+		float a = adc9_volt_calc(v);
+		printk("Voltage: %10i mV, raw = %10i\n", (int)a, v);
 
 
 		if (simulate_temp)

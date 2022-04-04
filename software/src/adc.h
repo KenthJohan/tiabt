@@ -2,6 +2,7 @@
 
 // https://github.com/MikroElektronika/mikrosdk_click_v2
 // https://github.com/MikroElektronika/mikrosdk_click_v2/tree/master/clicks/adc9
+// https://github.com/jspark311/MCP356x-Breakout/blob/6cc57254ad991eba59b2607941b86dc148f06eaf/Arduino/src/MCP356x.cpp
 
 #define MCP356X_COMMAND_BYTE(addr, cmd, type) (((addr)<<6) | ((cmd)<<2) | ((type)<<0))
 
@@ -154,39 +155,39 @@ static char const * MCP356X_REG_tostring(int a)
 #define MCP356X_IRQ_STP_EN                   0x01
 #define MCP356X_IRQ_STP_DIS                  0x00
 
-#define MCP356X_MUX_VIN_POS_NO_IN            0xF0
-#define MCP356X_MUX_VIN_POS_VCM              0xE0
-#define MCP356X_MUX_VIN_POS_TEMP             0xD0
-#define MCP356X_MUX_VIN_POS_VREF_EXT_MINUS   0xC0
-#define MCP356X_MUX_VIN_POS_VREF_EXT_PLUS    0xB0
-#define MCP356X_MUX_VIN_POS_VREF_INT         0xA0
-#define MCP356X_MUX_VIN_POS_AVDD             0x90
-#define MCP356X_MUX_VIN_POS_VSS              0x80
-#define MCP356X_MUX_VIN_POS_CH7              0x70
-#define MCP356X_MUX_VIN_POS_CH6              0x60
-#define MCP356X_MUX_VIN_POS_CH5              0x50
-#define MCP356X_MUX_VIN_POS_CH4              0x40
-#define MCP356X_MUX_VIN_POS_CH3              0x30
-#define MCP356X_MUX_VIN_POS_CH2              0x20
-#define MCP356X_MUX_VIN_POS_CH1              0x10
-#define MCP356X_MUX_VIN_POS_CH0              0x00
+#define MCP356X_MUX_VIN_POS_NO_IN            0xF0 // 1111 0000 Internal VCM
+#define MCP356X_MUX_VIN_POS_VCM              0xE0 // 1110 0000 Internal Temperature Sensor Diode M (Temp Diode M)(1)
+#define MCP356X_MUX_VIN_POS_TEMP             0xD0 // 1101 0000 Internal Temperature Sensor Diode P (Temp Diode P)(1)
+#define MCP356X_MUX_VIN_POS_VREF_EXT_MINUS   0xC0 // 1100 0000
+#define MCP356X_MUX_VIN_POS_VREF_EXT_PLUS    0xB0 // 1011 0000
+#define MCP356X_MUX_VIN_POS_VREF_INT         0xA0 // 1010 0000 Reserved (do not use)
+#define MCP356X_MUX_VIN_POS_AVDD             0x90 // 1001 0000
+#define MCP356X_MUX_VIN_POS_AGND             0x80 // 1000 0000
+#define MCP356X_MUX_VIN_POS_CH7              0x70 // 0111 0000
+#define MCP356X_MUX_VIN_POS_CH6              0x60 // 0110 0000
+#define MCP356X_MUX_VIN_POS_CH5              0x50 // 0101 0000
+#define MCP356X_MUX_VIN_POS_CH4              0x40 // 0100 0000
+#define MCP356X_MUX_VIN_POS_CH3              0x30 // 0011 0000
+#define MCP356X_MUX_VIN_POS_CH2              0x20 // 0010 0000
+#define MCP356X_MUX_VIN_POS_CH1              0x10 // 0001 0000
+#define MCP356X_MUX_VIN_POS_CH0              0x00 // 0000 0000
 
-#define MCP356X_MUX_VIN_NEG_NO_IN            0x0F
-#define MCP356X_MUX_VIN_NEG_VCM              0x0E
-#define MCP356X_MUX_VIN_NEG_TEMP             0x0D
-#define MCP356X_MUX_VIN_NEG_VREF_EXT_MINUS   0x0C
-#define MCP356X_MUX_VIN_NEG_VREF_EXT_PLUS    0x0B
-#define MCP356X_MUX_VIN_NEG_VREF_INT         0x0A
-#define MCP356X_MUX_VIN_NEG_AVDD             0x09
-#define MCP356X_MUX_VIN_NEG_VSS              0x08
-#define MCP356X_MUX_VIN_NEG_CH7              0x07
-#define MCP356X_MUX_VIN_NEG_CH6              0x06
-#define MCP356X_MUX_VIN_NEG_CH5              0x05
-#define MCP356X_MUX_VIN_NEG_CH4              0x04
-#define MCP356X_MUX_VIN_NEG_CH3              0x03
-#define MCP356X_MUX_VIN_NEG_CH2              0x02
-#define MCP356X_MUX_VIN_NEG_CH1              0x01
-#define MCP356X_MUX_VIN_NEG_CH0              0x00
+#define MCP356X_MUX_VIN_NEG_NO_IN            0x0F // 0000 1111
+#define MCP356X_MUX_VIN_NEG_VCM              0x0E // 0000 1110 Internal Temperature Sensor Diode M (Temp Diode M)(1)
+#define MCP356X_MUX_VIN_NEG_TEMP             0x0D // 0000 1101 Internal Temperature Sensor Diode P (Temp Diode P)(1)
+#define MCP356X_MUX_VIN_NEG_VREF_EXT_MINUS   0x0C // 0000 1100
+#define MCP356X_MUX_VIN_NEG_VREF_EXT_PLUS    0x0B // 0000 1011
+#define MCP356X_MUX_VIN_NEG_VREF_INT         0x0A // 0000 1010 Reserved (do not use)
+#define MCP356X_MUX_VIN_NEG_AVDD             0x09 // 0000 1001
+#define MCP356X_MUX_VIN_NEG_AGND             0x08 // 0000 1000
+#define MCP356X_MUX_VIN_NEG_CH7              0x07 // 0000 0111
+#define MCP356X_MUX_VIN_NEG_CH6              0x06 // 0000 0110
+#define MCP356X_MUX_VIN_NEG_CH5              0x05 // 0000 0101
+#define MCP356X_MUX_VIN_NEG_CH4              0x04 // 0000 0100
+#define MCP356X_MUX_VIN_NEG_CH3              0x03 // 0000 0011
+#define MCP356X_MUX_VIN_NEG_CH2              0x02 // 0000 0010
+#define MCP356X_MUX_VIN_NEG_CH1              0x01 // 0000 0001
+#define MCP356X_MUX_VIN_NEG_CH0              0x00 // 0000 0000
 
 #define MCP356X_SCAN_DLY_DM_CLK_X_512        0x00E00000
 #define MCP356X_SCAN_DLY_DM_CLK_X_256        0x00C00000

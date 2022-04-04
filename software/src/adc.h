@@ -221,11 +221,19 @@ communications, enable for digital offset and gain error calibrations
 #define MCP356X_CFG_3_CONV_MODE_STANDBY      0x80
 #define MCP356X_CFG_3_CONV_MODE_SHD          0x40
 #define MCP356X_CFG_3_CONV_MODE_SHD0         0x00
+
 // ADC Output Data Format Selection
+
+// 32-bit (25-bit right justified data + Channel ID): CHID[3:0] + SGN extension (4 bits) + 24-bit ADC data. 
+// It allows overrange with the SGN extension.
 #define MCP356X_CFG_3_DATA_FORMAT_CH_ADC     0x30
+// 32-bit (25-bit right justified data): SGN extension (8-bit) + 24-bit ADC data. It allows overrange with the SGN extension.
 #define MCP356X_CFG_3_DATA_FORMAT_SIGN_ADC   0x20
+// 32-bit (24-bit left justified data): 24-bit ADC data + 0x00 (8-bit). It does not allow overrange (ADC code locked to 0xFFFFFF or 0x800000).
 #define MCP356X_CFG_3_DATA_FORMAT_LEFT_JUST  0x10
+//24-bit (default ADC coding): 24-bit ADC data. It does not allow overrange (ADC code locked to 0xFFFFFF or 0x800000).
 #define MCP356X_CFG_3_DATA_FORMAT_DEF        0x00
+
 // CRC Checksum Format Selection on Read Communications
 #define MCP356X_CFG_3_CRC_FORMAT_32          0x08
 #define MCP356X_CFG_3_CRC_FORMAT_16          0x00
@@ -239,7 +247,11 @@ communications, enable for digital offset and gain error calibrations
 #define MCP356X_CFG_3_CRC_GAIN_CAL_EN        0x01
 #define MCP356X_CFG_3_CRC_GAIN_CAL_DIS       0x00
 
-
+struct mcp356x_data11
+{
+	uint8_t channel;
+	uint32_t value;
+};
 
 
 /*******************************************************************

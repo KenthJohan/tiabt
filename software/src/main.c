@@ -127,7 +127,28 @@ static uint32_t get32(uint8_t reg)
 	return v;
 }
 
-
+static void mcp356x_data11_get(struct mcp356x_data11 * value)
+{
+	uint8_t tx[5];
+	uint8_t rx[5];
+	struct spi_buf buf_tx[] = {{.buf = &tx,.len = sizeof(tx)}};
+	struct spi_buf buf_rx[] = {{.buf = &rx,.len = sizeof(rx)}};
+	struct spi_buf_set tx_buf = {.buffers = buf_tx, .count = 1};
+	struct spi_buf_set rx_buf = {.buffers = buf_rx, .count = 1};
+	tx[0] = MCP356X_COMMAND_BYTE(MCP356X_DEVICE_ADR, MCP356X_REG_ADC_DATA, MCP356X_CMD_INC_READ);
+	tx[1] = 0; // Need to write in order to read. Exchange 0 for reading data.
+	tx[2] = 0; // Need to write in order to read. Exchange 0 for reading data.
+	tx[3] = 0; // Need to write in order to read. Exchange 0 for reading data.
+	tx[4] = 0; // Need to write in order to read. Exchange 0 for reading data.
+	spi_transceive_dt(&spi_spec, &tx_buf, &rx_buf);
+	value->channel = rx[1] >> 4;
+	uint8_t sign = rx[1] & 0x01;
+	value->value = (rx[2] << 16) | (rx[3] << 8) | (rx[4] << 0);
+	if (sign != 0)
+	{
+		value->value -= 16777215;
+	}
+}
 
 
 static void set24(uint8_t reg, uint32_t value)
@@ -186,7 +207,8 @@ static void init_adc()
 	);
 	set8_verbose(MCP356X_REG_CFG_3,
 	MCP356X_CFG_3_CONV_MODE_CONT |
-	MCP356X_CFG_3_DATA_FORMAT_DEF |
+	//MCP356X_CFG_3_DATA_FORMAT_DEF |
+	MCP356X_CFG_3_DATA_FORMAT_CH_ADC |
 	MCP356X_CFG_3_CRC_FORMAT_16 |
 	MCP356X_CFG_3_CRC_COM_DIS |
 	MCP356X_CFG_3_CRC_OFF_CAL_EN |
@@ -195,15 +217,25 @@ static void init_adc()
 	set8_verbose(MCP356X_REG_MUX,
 	//MCP356X_MUX_VIN_POS_CH0 | 
 	//MCP356X_MUX_VIN_NEG_CH1
-	MCP356X_MUX_VIN_POS_CH0 | 
-	MCP356X_MUX_VIN_NEG_AGND
+	//MCP356X_MUX_VIN_POS_CH0 | 
+	//MCP356X_MUX_VIN_NEG_AGND
+	0
 	);
-	set24_verbose(MCP356X_REG_SCAN, 0);
+	//set24_verbose(MCP356X_REG_SCAN, 0);
+	set24_verbose(MCP356X_REG_SCAN, MCP356X_SCAN_CH0|MCP356X_SCAN_CH1|MCP356X_SCAN_CH2);
 	set24_verbose(MCP356X_REG_OFFSET_CAL, 0);
 	set24_verbose(MCP356X_REG_GAIN_CAL, 0x00800000);
 	set24_verbose(MCP356X_RSV_REG_W_A, 0x00900F00);
 }
 
+
+static float voltage_ch(uint8_t ch)
+{
+	set8(MCP356X_REG_MUX, ch | MCP356X_MUX_VIN_NEG_AGND);
+	int32_t v = get32(MCP356X_REG_ADC_DATA);
+	float a = adc9_volt_calc(v);
+	return a;
+}
 
 
 
@@ -235,9 +267,32 @@ void main(void)
 	while (1)
 	{
 		k_sleep(K_MSEC(1000));
-		int32_t v = get32(MCP356X_REG_ADC_DATA);
-		float a = adc9_volt_calc(v);
-		printk("Voltage: %10i mV, raw = %10i\n", (int)a, v);
+		
+		
+		/*
+		printk("Channel:  ch0  ch1  ch2  ch3  ch4  ch5  ch6  ch7\n"), 
+		printk("Voltage: %4i %4i %4i %4i %4i %4i %4i %4i\n", 
+		(int)voltage_ch(MCP356X_MUX_VIN_POS_CH0), 
+		(int)voltage_ch(MCP356X_MUX_VIN_POS_CH1), 
+		(int)voltage_ch(MCP356X_MUX_VIN_POS_CH2), 
+		(int)voltage_ch(MCP356X_MUX_VIN_POS_CH3), 
+		(int)voltage_ch(MCP356X_MUX_VIN_POS_CH4), 
+		(int)voltage_ch(MCP356X_MUX_VIN_POS_CH5), 
+		(int)voltage_ch(MCP356X_MUX_VIN_POS_CH6), 
+		(int)voltage_ch(MCP356X_MUX_VIN_POS_CH7)
+		);
+		*/
+		// printk("Voltage0: %4i\n", (int)voltage_ch(MCP356X_MUX_VIN_POS_CH0));
+		// printk("Voltage7: %4i\n", (int)voltage_ch(MCP356X_MUX_VIN_POS_CH7));
+	
+		struct mcp356x_data11 data;
+		mcp356x_data11_get(&data);
+		printk("Voltage: %02x %08i %08i\n", data.channel, data.value, (int)(adc9_volt_calc(data.value)*1000.0f));
+		
+
+		//rintk("ADCDATA: %08x\n", get32(MCP356X_REG_ADC_DATA));
+	
+
 
 
 		if (simulate_temp)

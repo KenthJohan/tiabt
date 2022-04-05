@@ -18,6 +18,11 @@
 #include "adc.h"
 #include "bt.h"
 
+
+// The ADC9 uses 2000mV voltage ref chip MCP1501
+#define VREF  2048
+
+
 // https://os.mbed.com/platforms/ST-Nucleo-WB55RG/
 // https://github.com/zephyrproject-rtos/zephyr/blob/main/boards/arm/nucleo_wb55rg/nucleo_wb55rg.dts
 /*

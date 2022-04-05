@@ -395,33 +395,19 @@ Analog multiplexer input selection (MUX mode only)
 
 static int32_t MCP356X_raw_to_mv(int32_t raw, int32_t vref, int32_t gain)
 {
-	int32_t p;
-	int32_t q;
+	int32_t c = (MCP356X_CALC_COEF / vref);
 	switch(gain)
 	{
-	case MCP356X_CFG_2_GAIN_X_64  : p = 64; q = 1; break;
-	case MCP356X_CFG_2_GAIN_X_32  : p = 32; q = 1; break;
-	case MCP356X_CFG_2_GAIN_X_16  : p = 16; q = 1; break;
-	case MCP356X_CFG_2_GAIN_X_8   : p = 8; q = 1; break;
-	case MCP356X_CFG_2_GAIN_X_4   : p = 4; q = 1; break;
-	case MCP356X_CFG_2_GAIN_X_2   : p = 2; q = 1; break;
-	case MCP356X_CFG_2_GAIN_X_1   : p = 1; q = 1; break;
-	case MCP356X_CFG_2_GAIN_X_033 : p = 1; q = 3; break;
+	case MCP356X_CFG_2_GAIN_X_64  : c *= 64; break;
+	case MCP356X_CFG_2_GAIN_X_32  : c *= 32; break;
+	case MCP356X_CFG_2_GAIN_X_16  : c *= 16; break;
+	case MCP356X_CFG_2_GAIN_X_8   : c *= 8; break;
+	case MCP356X_CFG_2_GAIN_X_4   : c *= 4; break;
+	case MCP356X_CFG_2_GAIN_X_2   : c *= 2; break;
+	case MCP356X_CFG_2_GAIN_X_1   : c *= 1; break;
+	case MCP356X_CFG_2_GAIN_X_033 : c /= 3; break;
 	}
 	int32_t mv;
-	mv = raw / (MCP356X_CALC_COEF/vref);
+	mv = raw / c;
 	return mv;
-}
-
-
-
-#define VREF  2048
-float adc9_volt_calc (int32_t adc_val)
-{
-	//adc_val /= 256;
-	float volt;
-	float gain = 1.0f;
-	uint32_t coef = MCP356X_CALC_COEF;
-	volt = ( float )( adc_val / ( float )( coef * gain ) ) * ( float ) VREF;
-	return volt;
 }

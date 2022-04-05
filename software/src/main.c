@@ -222,7 +222,8 @@ static void init_adc()
 	0
 	);
 	//set24_verbose(MCP356X_REG_SCAN, 0);
-	set24_verbose(MCP356X_REG_SCAN, MCP356X_SCAN_CH0|MCP356X_SCAN_CH1|MCP356X_SCAN_CH2);
+	//set24_verbose(MCP356X_REG_SCAN, MCP356X_SCAN_CH0|MCP356X_SCAN_CH1|MCP356X_SCAN_CH2);
+	set24_verbose(MCP356X_REG_SCAN, MCP356X_SCAN_CH3);
 	set24_verbose(MCP356X_REG_OFFSET_CAL, 0);
 	set24_verbose(MCP356X_REG_GAIN_CAL, 0x00800000);
 	set24_verbose(MCP356X_RSV_REG_W_A, 0x00900F00);
@@ -287,7 +288,7 @@ void main(void)
 	
 		struct mcp356x_data11 data;
 		mcp356x_data11_get(&data);
-		printk("Voltage: %02x %08i %08i\n", data.channel, data.value, (int)(adc9_volt_calc(data.value)*1000.0f));
+		printk("Voltage: %02x %08i %08i\n", data.channel, data.value, MCP356X_raw_to_mv(data.value, VREF, MCP356X_CFG_2_GAIN_X_1));
 		
 
 		//rintk("ADCDATA: %08x\n", get32(MCP356X_REG_ADC_DATA));

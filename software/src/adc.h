@@ -382,11 +382,43 @@ Analog multiplexer input selection (MUX mode only)
 
 
 
+/*
+111 = Gain is x64 (x16 analog, x4 digital)
+110 = Gain is x32 (x16 analog, x2 digital)
+101 = Gain is x16
+100 = Gain is x8
+011 = Gain is x4
+010 = Gain is x2
+001 = Gain is x1 (default)
+000 = Gain is x1/3
+*/
+
+static int32_t MCP356X_raw_to_mv(int32_t raw, int32_t vref, int32_t gain)
+{
+	int32_t p;
+	int32_t q;
+	switch(gain)
+	{
+	case MCP356X_CFG_2_GAIN_X_64  : p = 64; q = 1; break;
+	case MCP356X_CFG_2_GAIN_X_32  : p = 32; q = 1; break;
+	case MCP356X_CFG_2_GAIN_X_16  : p = 16; q = 1; break;
+	case MCP356X_CFG_2_GAIN_X_8   : p = 8; q = 1; break;
+	case MCP356X_CFG_2_GAIN_X_4   : p = 4; q = 1; break;
+	case MCP356X_CFG_2_GAIN_X_2   : p = 2; q = 1; break;
+	case MCP356X_CFG_2_GAIN_X_1   : p = 1; q = 1; break;
+	case MCP356X_CFG_2_GAIN_X_033 : p = 1; q = 3; break;
+	}
+	int32_t mv;
+	mv = raw / (MCP356X_CALC_COEF/vref);
+	return mv;
+}
+
+
 
 #define VREF  2048
 float adc9_volt_calc (int32_t adc_val)
 {
-	adc_val /= 256;
+	//adc_val /= 256;
 	float volt;
 	float gain = 1.0f;
 	uint32_t coef = MCP356X_CALC_COEF;

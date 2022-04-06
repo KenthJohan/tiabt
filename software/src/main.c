@@ -145,6 +145,9 @@ static void mcp356x_data11_get(struct mcp356x_data11 * value)
 	tx[2] = 0; // Need to write in order to read. Exchange 0 for reading data.
 	tx[3] = 0; // Need to write in order to read. Exchange 0 for reading data.
 	tx[4] = 0; // Need to write in order to read. Exchange 0 for reading data.
+	
+	printk("rx: %02x %02x %02x %02x %02x\n", rx[0], rx[1], rx[2], rx[3], rx[4]);
+
 	spi_transceive_dt(&spi_spec, &tx_buf, &rx_buf);
 	value->channel = rx[1] >> 4;
 	uint8_t sign = rx[1] & 0x01;
@@ -187,6 +190,32 @@ static void set24_verbose(uint8_t reg, uint32_t value)
 	printk("SET24: %s: %08x %08x\n", MCP356X_REG_tostring(reg), value, v);
 }
 
+/*
+5.3.1
+ANALOG GAIN
+The gain settings from 0.33x to 16x are done in the
+analog domain. This analog gain is placed on each ADC
+differential input. Each doubling of the gain improves the
+thermal noise due to sampling by approximately 3 dB,
+which means the lowest noise configuration is obtained
+when using the highest analog gain. The SNR, however,
+is degraded, since doubling the gain factor reduces the
+maximum allowable input signal amplitude by
+approximately 6 dB.
+If the gain is set to 0.33x, the differential input range
+theoretically becomes ±3 * VREF. However, the device
+does not support input voltages outside of the power
+supply voltage range. If large reference voltages are
+used with this gain, the input voltage range will be
+clipped between AGND and AVDD, and therefore, the
+output code span will be limited. This gain is useful
+when the reference voltage is small and when the
+input signal voltage is large.
+The analog gain stage can be used to amplify very low
+signals, but the differential input range of the
+Delta-Sigma modulator must not be exceeded.
+*/
+#define MY_GAIN MCP356X_CFG_2_GAIN_X_033
 
 static void init_adc()
 {
@@ -205,7 +234,8 @@ static void init_adc()
 	);
 	set8_verbose(MCP356X_REG_CFG_2,
 	MCP356X_CFG_2_BOOST_X_1 |
-	MCP356X_CFG_2_GAIN_X_1 |
+	//MCP356X_CFG_2_GAIN_X_1 |
+	MY_GAIN |
 	MCP356X_CFG_2_AZ_MUX_DIS |
 	MCP356X_CFG_2_AZ_VREF_EN |
 	MCP356X_CFG_2_AZ_FREQ_HIGH
@@ -228,21 +258,14 @@ static void init_adc()
 	);
 	//set24_verbose(MCP356X_REG_SCAN, 0);
 	//set24_verbose(MCP356X_REG_SCAN, MCP356X_SCAN_CH0|MCP356X_SCAN_CH1|MCP356X_SCAN_CH2);
+	
+	//set24_verbose(MCP356X_REG_IRQ, MCP356X_IRQ_MODE_LOGIC_HIGH);
 	set24_verbose(MCP356X_REG_SCAN, MCP356X_SCAN_CH3);
 	set24_verbose(MCP356X_REG_OFFSET_CAL, 0);
 	set24_verbose(MCP356X_REG_GAIN_CAL, 0x00800000);
-	set24_verbose(MCP356X_RSV_REG_W_A, 0x00900F00);
+	//set24_verbose(MCP356X_RSV_REG_W_A, 0x00900F00);
+	set24_verbose(MCP356X_RSV_REG_W_A, 0x00900000);
 }
-
-
-static float voltage_ch(uint8_t ch)
-{
-	set8(MCP356X_REG_MUX, ch | MCP356X_MUX_VIN_NEG_AGND);
-	int32_t v = get32(MCP356X_REG_ADC_DATA);
-	float a = adc9_volt_calc(v);
-	return a;
-}
-
 
 
 void main(void)
@@ -293,7 +316,7 @@ void main(void)
 	
 		struct mcp356x_data11 data;
 		mcp356x_data11_get(&data);
-		printk("Voltage: %02x %08i %08i\n", data.channel, data.value, MCP356X_raw_to_mv(data.value, VREF, MCP356X_CFG_2_GAIN_X_1));
+		printk("Voltage: %02x %08x %08i\n", data.channel, data.value, MCP356X_raw_to_mv(data.value, VREF, MY_GAIN));
 		
 
 		//rintk("ADCDATA: %08x\n", get32(MCP356X_REG_ADC_DATA));

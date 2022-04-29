@@ -23,17 +23,7 @@
 
 void main(void)
 {
-	int err;
-
-	err = bt_enable(NULL);
-	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
-		return;
-	}
-
-	bt_ready();
-
-	bt_conn_auth_cb_register(&auth_cb_display);
+	mybt_init();
 	
 	//init_adc();
 
@@ -49,10 +39,6 @@ void main(void)
 	while (1)
 	{
 		k_sleep(K_MSEC(1000));
-		if (simulate_temp)
-		{
-			ess_simulate();
-		}
-		bas_notify();
+		mybt_progress();
 	}
 }

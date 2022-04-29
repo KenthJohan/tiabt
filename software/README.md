@@ -20,3 +20,15 @@ west flash
 * https://github.com/edmundsj/MCP3561DevBoard/blob/master/mcp3561_arduino/mcp3561.h
 * https://github.com/MoustachedBird/ESP32_seismic_datalogger/blob/main/main/spi_mcp356x.c
 * https://github.com/KenthJohan/zephyrtest/blob/master/src/tmc2130.h
+
+
+
+
+
+## NOTES
+Using the following
+```
+CONFIG_ASSERT=y
+CONFIG_ASSERT_VERBOSE=y
+```
+for the board `nrf52840dongle_nrf52840` in prj.conf does not work for unknown reason.

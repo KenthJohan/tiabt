@@ -15,7 +15,7 @@
 #include <devicetree.h>
 #include <drivers/gpio.h>
 
-#include "adc.h"
+//#include "adc.h"
 #include "bt.h"
 
 
@@ -35,7 +35,7 @@ void main(void)
 
 	bt_conn_auth_cb_register(&auth_cb_display);
 	
-	init_adc();
+	//init_adc();
 
 	//gpio_pin_configure_dt(&led1, GPIO_OUTPUT_ACTIVE);
 	//gpio_pin_configure_dt(&led2, GPIO_OUTPUT_ACTIVE);

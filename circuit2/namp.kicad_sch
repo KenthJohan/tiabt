@@ -3350,6 +3350,11 @@
     (effects (font (size 4 4)) (justify left bottom))
     (uuid cc0c251f-6ac8-439f-832a-c6fce732758d)
   )
+  (text "https://www.digikey.se/sv/articles/how-to-design-stable-transimpedance-amplifiers-automotive-medical-systems\n\nMCP6034 OpAmp:\nC_CM = 6pF\nC_DIFF = 6pF\nGBWP = 10kHz\n\nMOLOKO Photodiode:\nC_PD = ? , exemple Vishay TEFD4300 is 3.3pF\n\n\n\nCin = C_CM + C_DIFF + C_PD = 6+6+3.3 = 15.3pF\nCf = sqrt(Cin / (2*PI*Rf*GPWP))\nCf = sqrt((15.3*10^(-12))/(2*pi*(1*10^6) * (10*10^3)))\nCf = 1.5450968080927583213687709412459556523443978567508523833347 × 10^-11\nCf = 15pF\n\n\n"
+    (at 132.08 201.93 0)
+    (effects (font (size 1.27 1.27)) (justify left bottom))
+    (uuid d391c834-6538-4f0d-b497-24f783c86c57)
+  )
   (text "In High Voltage mode, \nthe output from REG0 can be used to \nsupply external circuitry from the VDD pin. \nThe VDD output voltage is \nconfigured in the register REGOUT0 for \n1.8V, 2.1V, 2.4V, 2.7V, 3.0V and 3.3V."
     (at 194.31 97.79 0)
     (effects (font (size 1.27 1.27)) (justify left bottom))

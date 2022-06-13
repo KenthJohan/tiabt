@@ -1,0 +1,37 @@
+# Available runners configured by board.cmake.
+runners:
+- openocd
+- pyocd
+- stm32cubeprogrammer
+
+# Default flash runner if --runner is not given.
+flash-runner: openocd
+
+# Default debug runner if --runner is not given.
+debug-runner: openocd
+
+# Common runner configuration values.
+config:
+  board_dir: C:/zephyrproject/zephyr/boards/arm/nucleo_wb55rg
+  # Build outputs:
+  elf_file: zephyr.elf
+  hex_file: zephyr.hex
+  bin_file: zephyr.bin
+  # Host tools:
+  gdb: C:/gnuarmemb/bin/arm-none-eabi-gdb.exe
+  openocd: C:/OpenOCD/bin/openocd.exe
+  openocd_search:
+
+# Runner specific arguments
+args:
+  openocd:
+    - --cmd-load
+    - flash write_image erase
+    - --cmd-verify
+    - verify_image
+  pyocd:
+    - --dt-flash=y
+    - --target=stm32wb55rgvx
+  stm32cubeprogrammer:
+    - --port=swd
+    - --reset=hw

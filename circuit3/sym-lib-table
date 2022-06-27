@@ -2,4 +2,5 @@
   (lib (name "NRF52840")(type "Legacy")(uri "${KIPRJMOD}/Library.pretty/NRF52840-DONGLE.lib")(options "")(descr ""))
   (lib (name "MCP3564")(type "KiCad")(uri "${KIPRJMOD}/Library.pretty/MCP3564.kicad_sym")(options "")(descr ""))
   (lib (name "max6070")(type "KiCad")(uri "${KIPRJMOD}/Library.pretty/max6070.kicad_sym")(options "")(descr ""))
+  (lib (name "Moloko")(type "KiCad")(uri "${KIPRJMOD}/Moloko.pretty/Moloko.kicad_sym")(options "")(descr ""))
 )

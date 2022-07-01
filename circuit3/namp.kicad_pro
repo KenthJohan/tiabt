@@ -386,7 +386,7 @@
         ],
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "schematic_color": "rgba(0, 0, 0, 0.000)",
-        "track_width": 0.5,
+        "track_width": 0.6,
         "via_diameter": 0.8,
         "via_drill": 0.4,
         "wire_width": 6.0
@@ -402,15 +402,17 @@
         "microvia_drill": 0.1,
         "name": "Power",
         "nets": [
+          "+5V",
           "ADC_AVDD",
           "ADC_DVDD",
           "NRF_REG0_V",
           "TIA0_V",
-          "TIA1_V"
+          "TIA1_V",
+          "TIA_4.5V"
         ],
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "schematic_color": "rgba(0, 0, 0, 0.000)",
-        "track_width": 0.4,
+        "track_width": 0.5,
         "via_diameter": 0.8,
         "via_drill": 0.4,
         "wire_width": 6.0
